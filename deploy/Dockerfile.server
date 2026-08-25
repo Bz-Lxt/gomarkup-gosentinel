@@ -1,0 +1,23 @@
+FROM golang:1.24-alpine3.21 AS build
+WORKDIR /src
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+    && apk add --no-cache ca-certificates
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GOTOOLCHAIN=auto
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/gosentinel-server ./cmd/gosentinel-server
+
+FROM alpine:3.21
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories \
+    && apk add --no-cache ca-certificates wget \
+    && adduser -D -H -u 10001 sentinel
+WORKDIR /app
+COPY --from=build /out/gosentinel-server /app/gosentinel-server
+RUN mkdir -p /data && chown -R sentinel:sentinel /app /data
+USER sentinel
+ENV TZ=Asia/Shanghai
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1
+ENTRYPOINT ["/app/gosentinel-server"]
