@@ -1,0 +1,14 @@
+.git
+.alkaid-sop
+docs
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+data
+*.log
+.DS_Store
+.idea
+.vscode
+coverage.out
+*.test
