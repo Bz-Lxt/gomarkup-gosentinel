@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><polyline points='1,1 6,6 11,1' fill='none' stroke='%23999' stroke-width='1.6'/></svg>");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(62, 224, 200, 0.08), transparent 50%),
+    radial-gradient(900px 500px at 110% 0%, rgba(255, 92, 122, 0.08), transparent 46%),
+    #070b14;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1a2740 transparent;
+}
