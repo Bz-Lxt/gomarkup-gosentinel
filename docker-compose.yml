@@ -1,0 +1,100 @@
+services:
+  controlplane:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.server
+    environment:
+      - TZ=Asia/Shanghai
+      - GOSENTINEL_LISTEN=:8080
+      - GOSENTINEL_DATA_DIR=/data
+      - GOSENTINEL_LOG_LEVEL=info
+      - GOSENTINEL_WS_ORIGINS=http://localhost:31481,http://127.0.0.1:31481
+    volumes:
+      - sentinel-data:/data
+    ports:
+      - "${CONTROL_PORT:-31482}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  example-gin:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.example
+      args:
+        EXAMPLE_BIN: example-gin
+    environment:
+      - TZ=Asia/Shanghai
+      - GOSENTINEL_CONTROL=ws://controlplane:8080/ws/nodes
+      - GOSENTINEL_SERVICE=demo-gin
+      - GOSENTINEL_LISTEN=:8080
+      - GOSENTINEL_LOG_LEVEL=info
+    ports:
+      - "${GIN_PORT:-31483}:8080"
+    depends_on:
+      controlplane:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  example-grpc:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.example
+      args:
+        EXAMPLE_BIN: example-grpc
+    environment:
+      - TZ=Asia/Shanghai
+      - GOSENTINEL_CONTROL=ws://controlplane:8080/ws/nodes
+      - GOSENTINEL_SERVICE=demo-grpc
+      - GOSENTINEL_LISTEN=:50051
+      - GOSENTINEL_LOG_LEVEL=info
+    ports:
+      - "${GRPC_PORT:-31484}:50051"
+    depends_on:
+      controlplane:
+        condition: service_healthy
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "${DASHBOARD_PORT:-31481}:8080"
+    depends_on:
+      controlplane:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 8
+      start_period: 10s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  sentinel-data:
