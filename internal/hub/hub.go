@@ -187,7 +187,11 @@ func (h *Hub) attach(hello protocol.Hello, conn *websocket.Conn, done <-chan str
 
 func (h *Hub) detach(n *Node) {
 	h.mu.Lock()
-	if cur, ok := h.nodes[n.ID]; ok {
+	// Only mark the node offline if it is still the one we registered. When a
+	// replacement connection has already taken over the slot (h.nodes[n.ID]
+	// points to a newer Node), detaching the old connection must not clobber
+	// the new connection's online state.
+	if cur, ok := h.nodes[n.ID]; ok && cur == n {
 		cur.Connected = false
 		cur.LastSeen = timeutil.Now()
 	}
