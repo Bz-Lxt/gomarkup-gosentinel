@@ -105,7 +105,8 @@ func (c *Client) handle(conn *websocket.Conn, raw []byte) {
 		var validationErr error
 		for i := range rules {
 			rules[i].Normalize()
-			if validationErr := rule.Validate(rules[i]); validationErr != nil {
+			validationErr = rule.Validate(rules[i])
+			if validationErr != nil {
 				break
 			}
 		}
