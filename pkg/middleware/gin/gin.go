@@ -43,13 +43,14 @@ func Middleware(g *sentinel.Guard, opts Options) gin.HandlerFunc {
 			tok.Exit(sentinel.ResultFallback)
 			return
 		}
-		defer func(status int) {
+		defer func() {
+			status := c.Writer.Status()
 			if status >= 500 && opts.IsError(c) {
 				tok.Exit(sentinel.ResultError)
 				return
 			}
 			tok.Exit(sentinel.ResultOK)
-		}(c.Writer.Status())
+		}()
 		c.Next()
 	}
 }
