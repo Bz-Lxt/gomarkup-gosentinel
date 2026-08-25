@@ -21,7 +21,7 @@ func UnaryInterceptor(g *sentinel.Guard) grpc.UnaryServerInterceptor {
 			}
 			return nil, status.Error(code, string(tok.Reason))
 		}
-		resp, err := handler(context.WithoutCancel(ctx), req)
+		resp, err := handler(ctx, req)
 		if err != nil {
 			if st, ok := status.FromError(err); ok {
 				switch st.Code() {
