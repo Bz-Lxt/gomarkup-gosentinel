@@ -83,6 +83,14 @@ func Validate(s Snapshot) error {
 	if s.Fallback != "" && utf8.RuneCountInString(s.Fallback) > 64 {
 		add("fallback", "max_length", "fallback must be ≤ 64 characters")
 	}
+	// Return a nil error interface (not a typed-nil *ValidationError) when
+	// no field errors were collected. Returning the bare `result` variable
+	// here would yield a non-nil error wrapping a nil pointer, which trips
+	// `err != nil` checks in callers and causes errors.As to match a nil
+	// value, ultimately panicking on Details access.
+	if result == nil {
+		return nil
+	}
 	return result
 }
 
