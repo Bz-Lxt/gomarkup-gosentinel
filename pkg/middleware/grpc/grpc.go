@@ -23,12 +23,7 @@ func UnaryInterceptor(g *sentinel.Guard) grpc.UnaryServerInterceptor {
 		}
 		resp, err := handler(ctx, req)
 		if err != nil {
-			if statusErr, ok := err.(interface{ GRPCStatus() *status.Status }); ok {
-				st := statusErr.GRPCStatus()
-				if st == nil {
-					tok.Exit(sentinel.ResultBusiness)
-					return resp, err
-				}
+			if st, ok := status.FromError(err); ok && st != nil {
 				switch st.Code() {
 				case codes.Internal, codes.Unavailable, codes.DeadlineExceeded:
 					tok.Exit(sentinel.ResultError)
