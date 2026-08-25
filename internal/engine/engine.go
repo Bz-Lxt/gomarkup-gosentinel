@@ -20,7 +20,6 @@ type Entry struct {
 	Start    time.Time
 	res      *resource
 	clock    clock.Clock
-	policy   rule.Snapshot
 }
 
 type resource struct {
@@ -140,16 +139,16 @@ func (e *Engine) Enter(service, resourceName, method string) Entry {
 
 	if !r.Enabled {
 		res.win.AddPass()
-		return Entry{Resource: res.key, Reason: reason.Disabled, Start: start, res: res, clock: e.clock, policy: r}
+		return Entry{Resource: res.key, Reason: reason.Disabled, Start: start, res: res, clock: e.clock}
 	}
 
 	if why := res.brk.Allow(r); why == reason.CircuitOpen {
 		res.win.AddBlock()
 		res.win.AddFallback()
-		return Entry{Resource: res.key, Reason: why, Blocked: true, Start: start, res: res, clock: e.clock, policy: r}
+		return Entry{Resource: res.key, Reason: why, Blocked: true, Start: start, res: res, clock: e.clock}
 	} else if why == reason.CircuitProbe {
 		res.win.AddPass()
-		return Entry{Resource: res.key, Reason: why, Start: start, res: res, clock: e.clock, policy: r}
+		return Entry{Resource: res.key, Reason: why, Start: start, res: res, clock: e.clock}
 	}
 
 	limit := r.QPS
@@ -163,10 +162,10 @@ func (e *Engine) Enter(service, resourceName, method string) Entry {
 	}
 	if int64(res.win.PassCount()) >= limit {
 		res.win.AddBlock()
-		return Entry{Resource: res.key, Reason: reasonLimited, Blocked: true, Start: start, res: res, clock: e.clock, policy: r}
+		return Entry{Resource: res.key, Reason: reasonLimited, Blocked: true, Start: start, res: res, clock: e.clock}
 	}
 	res.win.AddPass()
-	return Entry{Resource: res.key, Reason: reason.Pass, Start: start, res: res, clock: e.clock, policy: r}
+	return Entry{Resource: res.key, Reason: reason.Pass, Start: start, res: res, clock: e.clock}
 }
 
 type Finish int
@@ -196,7 +195,7 @@ func (e *Entry) Exit(fin Finish) {
 	if failed {
 		e.res.win.AddError()
 	}
-	r := e.policy
+	r, _ := e.res.rule.Load().(rule.Snapshot)
 	snap := e.res.win.Snapshot()
 	e.res.brk.Observe(r, failed, snap.Pass, snap.Error)
 	if r.Mode == rule.ModeAdaptive && e.res.adaptSeq.Add(1)%16 == 0 {
