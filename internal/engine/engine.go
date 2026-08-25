@@ -59,7 +59,11 @@ func New(c clock.Clock) *Engine {
 func (e *Engine) DrainEvents() []circuit.Event {
 	e.evtMu.Lock()
 	defer e.evtMu.Unlock()
-	out := e.events
+	if len(e.events) == 0 {
+		return []circuit.Event{}
+	}
+	out := make([]circuit.Event, len(e.events))
+	copy(out, e.events)
 	e.events = e.events[:0]
 	return out
 }
